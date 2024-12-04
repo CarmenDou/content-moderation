@@ -1,6 +1,13 @@
 {
-  "extends": [],
+  "extends": [
+    "plugin:@typescript-eslint/recommended",
+    "eslint:recommended"
+  ],
   "rules": {
-    "all": "off" // 禁用所有 ESLint 规则
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-unused-vars": "off",
+    "no-console": "off",
+    "no-undef": "off"
   }
 }
