@@ -3,50 +3,60 @@ name: Deploy Next.js to Cloud Run
 on:
   push:
     branches:
-      - main  # 当推送到 main 分支时触发工作流
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-22.04
 
     steps:
-    # 1. 检出代码
     - name: Checkout code
       uses: actions/checkout@v2
 
-    # 2. 设置 Node.js 环境
+    # Set up Google Cloud authentication
+    - name: Set up Google Cloud authentication
+      uses: google-github-actions/auth@v0
+      with:
+        credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+    # Set up Node.js
     - name: Set up Node.js
       uses: actions/setup-node@v2
       with:
         node-version: '18.18.0'
 
-    # 3. 安装依赖
+    # Install dependencies
     - name: Install dependencies
       run: npm install
 
-    # 4. 构建 Next.js 应用
+    # Build Next.js application
     - name: Build Next.js application
       run: npm run build
 
-    # 5. 构建 Docker 镜像
+    # Build Docker image
     - name: Build Docker image
       run: |
         docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/content-moderation .
 
-    # 6. 设置 Google Cloud 凭据
-    - name: Set up Google Cloud credentials
+    # Set up Google Cloud CLI
+    - name: Set up Google Cloud CLI
       uses: google-github-actions/setup-gcloud@v2
       with:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
-        credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+        version: latest
 
-    # 7. 推送 Docker 镜像到 Google Container Registry (GCR)
+    # Authenticate with Docker to Google Container Registry
+    - name: Authenticate Docker to Google Container Registry
+      run: |
+        gcloud auth configure-docker
+
+    # Push Docker image to GCR
     - name: Push Docker image to GCR
       run: |
         docker tag gcr.io/${{ secrets.GCP_PROJECT_ID }}/content-moderation gcr.io/${{ secrets.GCP_PROJECT_ID }}/content-moderation:latest
         docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/content-moderation:latest
 
-    # 8. 部署到 Cloud Run
+    # Deploy to Cloud Run
     - name: Deploy to Cloud Run
       run: |
         gcloud run deploy content-moderation \
